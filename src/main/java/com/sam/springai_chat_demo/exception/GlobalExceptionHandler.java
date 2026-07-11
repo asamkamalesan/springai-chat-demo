@@ -28,13 +28,25 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
-    /** Anything unexpected. The detail is logged, not returned, to avoid leaking internals. */
+    /**
+     * Anything not handled above. The full stack trace is logged server-side; the response
+     * carries a one-line summary (exception type + first line of the message) so the client
+     * sees the same gist as the console instead of an opaque message.
+     */
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpected(Exception e) {
         log.error("Unexpected error handling request", e);
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
+                HttpStatus.INTERNAL_SERVER_ERROR, summarize(e));
         problem.setTitle("Internal server error");
         return problem;
+    }
+
+    /** e.g. {@code "NullPointerException: Cannot invoke ..."} — type plus the message's first line. */
+    private static String summarize(Throwable e) {
+        String firstLine = e.getMessage() == null ? "" : e.getMessage().lines().findFirst().orElse("");
+        return firstLine.isBlank()
+                ? e.getClass().getSimpleName()
+                : e.getClass().getSimpleName() + ": " + firstLine;
     }
 }
