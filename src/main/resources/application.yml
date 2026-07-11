@@ -21,3 +21,10 @@ spring:
           model: claude-sonnet-4-5
           temperature: 0.7
           max-tokens: 1024
+
+# App-specific config.
+app:
+  auth:
+    # Expected bearer token for the /chat endpoints. Blank => all chat requests are rejected (fail closed).
+    # Local dev: set APP_AUTH_TOKEN. Deployed: add "app.auth.token" to the AWS secret JSON.
+    token: ${APP_AUTH_TOKEN:}

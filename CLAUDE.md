@@ -12,7 +12,7 @@ Use the Maven wrapper (`./mvnw` on Unix, `mvnw.cmd` on Windows/PowerShell).
 - Run a single test class: `./mvnw test -Dtest=SpringaiChatDemoApplicationTests`
 - Run a single test method: `./mvnw test -Dtest=SpringaiChatDemoApplicationTests#methodName`
 
-Endpoints (once running):
+Endpoints (once running). The `/chat*` endpoints require an `Authorization: Bearer <token>` header matching `app.auth.token` (see AuthTokenFilter); `/actuator` is open.
 - `GET http://localhost:8080/chat?message=<text>` — synchronous; returns the full reply as plain text.
 - `GET http://localhost:8080/chat/stream?message=<text>` — streams the reply token-by-token as Server-Sent Events (`text/event-stream`).
 - Actuator endpoints are exposed under `/actuator`.
@@ -25,6 +25,7 @@ Spring Boot 3.5 + Spring AI 1.1 app (Java 21) that exposes a single-turn chat en
 - `config/ChatClientConfig` — builds the singleton `ChatClient` bean from the auto-configured `ChatClient.Builder`, setting the default system prompt. This is the place to change global chat behavior (system prompt, default options, advisors).
 - `controller/ChatController` — REST controller. `/chat` calls the model synchronously via `chatClient.prompt().user(message).call().content()` and lets exceptions propagate to the global handler. `/chat/stream` returns a `Flux<String>` via `.stream().content()` as SSE; since the 200 response has already begun when errors surface mid-stream, they are mapped to a final text chunk via `onErrorResume` rather than an HTTP status.
 - `exception/GlobalExceptionHandler` — `@RestControllerAdvice` returning RFC 7807 `ProblemDetail` responses: `NonTransientAiException` (auth/billing/invalid-request) → 400 with the API message; any other `Exception` → 500 with a generic message (details are logged, not returned). Covers the synchronous `/chat` path only — streaming errors are handled reactively in the controller.
+- `security/AuthTokenFilter` — `OncePerRequestFilter` guarding the `/chat` endpoints with a static shared-secret bearer token. Clients send `Authorization: Bearer <token>`; it's compared (constant-time) against the `app.auth.token` property. `shouldNotFilter` skips non-`/chat` paths so actuator/health stays open. Fails closed: if `app.auth.token` is blank, all chat requests get 401. Runs before Spring MVC, so it writes its own `ProblemDetail` 401 rather than going through `GlobalExceptionHandler`. Planned evolution: swap the static comparison for JWT validation (Spring Security OAuth2 resource server with an issuer/JWKS).
 
 The Anthropic model, temperature, and max-tokens are configured in `application.yml` under `spring.ai.anthropic`. The `spring-ai-starter-model-anthropic` starter auto-configures the `ChatClient.Builder` from these properties — there is no manual client wiring.
 

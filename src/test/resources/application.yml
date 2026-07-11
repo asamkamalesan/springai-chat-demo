@@ -1,0 +1,16 @@
+# Test-only config. Shadows src/main/resources/application.yml on the test classpath,
+# so tests never import from AWS Secrets Manager or make network calls.
+spring:
+  cloud:
+    aws:
+      region:
+        static: ap-south-1   # lets the SecretsManagerClient bean build without hitting AWS
+  ai:
+    anthropic:
+      api-key: test-key
+      chat:
+        options:
+          model: claude-sonnet-4-5
+app:
+  auth:
+    token: test-secret
