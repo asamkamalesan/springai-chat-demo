@@ -36,3 +36,6 @@ build/
 .vscode/
 
 springai-chat-demo-dev_accessKeys.csv
+
+### Local secrets / env (never commit) ###
+.env
