@@ -1,0 +1,23 @@
+spring:
+  config:
+    import:
+      # Local dev override — commented out, now sourcing the key from AWS Secrets Manager.
+      # - optional:file:./config/local.yml
+      # Loads the secret's JSON into Spring properties. Store it as, e.g.:
+      #   { "spring.ai.anthropic.api-key": "sk-ant-..." }
+      - optional:aws-secretsmanager:springai-chat-demo/anthropic
+  application:
+    name: springai-chat-demo
+  cloud:
+    aws:
+      region:
+        static: ${AWS_REGION:ap-south-1}
+  ai:
+    anthropic:
+      # Overridden by the AWS Secrets Manager import above; env var kept as a fallback.
+      api-key: ${SPRING_AI_ANTHROPIC_API_KEY:}
+      chat:
+        options:
+          model: claude-sonnet-4-5
+          temperature: 0.7
+          max-tokens: 1024
